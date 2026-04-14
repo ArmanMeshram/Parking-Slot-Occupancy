@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Parking — PIR Slot Occupancy System</title>
+    <meta name="description" content="PIR proximity sensor based parking slot occupancy monitoring system with real-time slot status array and Bluetooth transmission.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="app">
+        <!-- Ambient glow blobs -->
+        <div class="glow glow-1"></div>
+        <div class="glow glow-2"></div>
+        <div class="glow glow-3"></div>
+
+        <!-- Header -->
+        <header class="header" id="header">
+            <div class="header-left">
+                <div class="logo-mark">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+                </div>
+                <div>
+                    <h1>Smart Parking System</h1>
+                    <p class="header-sub">PIR Proximity Sensor · Slot Status Array · Bluetooth TX</p>
+                </div>
+            </div>
+            <div class="header-right">
+                <div class="live-badge" id="live-badge">
+                    <span class="live-dot"></span>
+                    LIVE
+                </div>
+                <div class="bt-status" id="bt-status">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6.5 6.5l11 11L12 23V1l5.5 5.5-11 11"/></svg>
+                    <span>BT Connected</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="main">
+            <!-- Top Stats Row -->
+            <section class="stats-row" id="stats-row">
+                <div class="stat-card" id="stat-total">
+                    <div class="stat-icon icon-total">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>
+                    </div>
+                    <div class="stat-info">
+                        <span class="stat-value" id="total-slots">8</span>
+                        <span class="stat-label">Total Slots</span>
+                    </div>
+                </div>
+                <div class="stat-card" id="stat-available">
+                    <div class="stat-icon icon-available">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                    </div>
+                    <div class="stat-info">
+                        <span class="stat-value" id="available-count">8</span>
+                        <span class="stat-label">Available</span>
+                    </div>
+                </div>
+                <div class="stat-card" id="stat-occupied">
+                    <div class="stat-icon icon-occupied">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+                    </div>
+                    <div class="stat-info">
+                        <span class="stat-value" id="occupied-count">0</span>
+                        <span class="stat-label">Occupied</span>
+                    </div>
+                </div>
+                <div class="stat-card" id="stat-bt-packets">
+                    <div class="stat-icon icon-bt">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6.5 6.5l11 11L12 23V1l5.5 5.5-11 11"/></svg>
+                    </div>
+                    <div class="stat-info">
+                        <span class="stat-value" id="bt-packets">0</span>
+                        <span class="stat-label">BT Packets Sent</span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Middle: Parking Grid + Entry/Exit Gates -->
+            <section class="parking-section">
+                <!-- Entry Gate -->
+                <div class="gate gate-entry" id="gate-entry">
+                    <div class="gate-label">ENTRY</div>
+                    <div class="gate-bar" id="gate-entry-bar"></div>
+                    <div class="pir-sensor" id="pir-entry">
+                        <div class="pir-ring"></div>
+                        <div class="pir-core"></div>
+                        <span>PIR-E</span>
+                    </div>
+                    <button class="gate-btn" id="btn-entry" onclick="simulateEntry()">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/></svg>
+                        Vehicle Entry
+                    </button>
+                </div>
+
+                <!-- Parking Grid -->
+                <div class="parking-grid-wrapper">
+                    <div class="parking-grid" id="parking-grid">
+                        <!-- Slots generated by JS -->
+                    </div>
+                    <div class="grid-legend">
+                        <div class="legend-item"><span class="legend-dot available"></span> Available</div>
+                        <div class="legend-item"><span class="legend-dot occupied"></span> Occupied</div>
+                        <div class="legend-item"><span class="legend-dot sensor-active"></span> PIR Active</div>
+                    </div>
+                </div>
+
+                <!-- Exit Gate -->
+                <div class="gate gate-exit" id="gate-exit">
+                    <div class="gate-label">EXIT</div>
+                    <div class="gate-bar" id="gate-exit-bar"></div>
+                    <div class="pir-sensor" id="pir-exit">
+                        <div class="pir-ring"></div>
+                        <div class="pir-core"></div>
+                        <span>PIR-X</span>
+                    </div>
+                    <button class="gate-btn btn-exit" id="btn-exit" onclick="simulateExit()">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>
+                        Vehicle Exit
+                    </button>
+                </div>
+            </section>
+
+            <!-- Bottom: Slot Status Array + Bluetooth Log -->
+            <section class="bottom-panels">
+                <!-- Slot Status Array -->
+                <div class="panel panel-array" id="panel-array">
+                    <div class="panel-header">
+                        <h2>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+                            Slot Status Array
+                        </h2>
+                        <span class="panel-badge mono">int slotStatus[8]</span>
+                    </div>
+                    <div class="array-display" id="array-display">
+                        <!-- Generated by JS -->
+                    </div>
+                    <div class="array-code" id="array-code">
+                        <pre><code id="code-output">// Waiting for sensor data...</code></pre>
+                    </div>
+                </div>
+
+                <!-- Bluetooth Transmission Log -->
+                <div class="panel panel-bt" id="panel-bt">
+                    <div class="panel-header">
+                        <h2>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6.5 6.5l11 11L12 23V1l5.5 5.5-11 11"/></svg>
+                            Bluetooth TX Log
+                        </h2>
+                        <span class="panel-badge">HC-05</span>
+                    </div>
+                    <div class="bt-log" id="bt-log">
+                        <div class="bt-entry bt-system">
+                            <span class="bt-time">--:--:--</span>
+                            <span class="bt-msg">System initialized. Waiting for PIR triggers...</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Auto Simulation Toggle -->
+            <section class="controls-bar" id="controls-bar">
+                <button class="ctrl-btn" id="btn-auto" onclick="toggleAutoSimulation()">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                    <span id="auto-label">Start Auto Simulation</span>
+                </button>
+                <button class="ctrl-btn ctrl-reset" id="btn-reset" onclick="resetAll()">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+                    Reset All
+                </button>
+                <div class="speed-control">
+                    <label for="sim-speed">Sim Speed:</label>
+                    <input type="range" id="sim-speed" min="500" max="4000" value="2000" step="250">
+                    <span id="speed-display">2.0s</span>
+                </div>
+            </section>
+        </main>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <p>Smart Parking Occupancy System &middot; PIR Sensor + Arduino + HC-05 Bluetooth Module</p>
+        </footer>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
